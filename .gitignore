@@ -1,0 +1,5 @@
+# Arquivos compilados Java
+*.class
+
+# Pasta de build
+/bin/
