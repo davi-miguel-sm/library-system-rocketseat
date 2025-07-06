@@ -1,5 +1,10 @@
 import java.util.Scanner;
 
+import model.Author;
+import model.Book;
+import model.Client;
+import model.Library;
+
 public class App {
     private static final Scanner read = new Scanner(System.in);
 
@@ -7,11 +12,17 @@ public class App {
         Integer menu = 99;
 
         while (menu != 0) {
-            System.out.println("Select the option:\n1 - Client\n2 - Adm\n0 - exit");
-            menu = readMenuOption();
+            System.out.println("\nSelect the option:\n1 - Client\n2 - Adm\n0 - exit");
+            menu = readIntegerOption();
             switch (menu) {
                 case 1:
-                    clientMenu();
+                    System.out.println("Insert client id:");
+                    Integer clientId = readIntegerOption();
+                    if (!validateClientId(clientId)) {
+                        System.out.println("The client is not registered.");
+                        break;
+                    }
+                    clientMenu(clientId);
                     break;
                 case 2:
                     admMenu();
@@ -26,30 +37,61 @@ public class App {
         }
     }
 
-    public static void clientMenu() {
-        // Validar cliente existente
-
-        // Permitir listagem dos proprios livros
-
-        // Permitir listagem de todos os livros passando filtros disponiveis por genero
-        // do livro
-
-        // Permitir devolver livro
+    public static void clientMenu(Integer clientId) {
+        Client client = Library.getClients()
+                .stream().filter(c -> c.getId() == clientId)
+                .toList().getFirst();
+        var clientBooks = Library.getClientLoans(client);
         Integer clientMenu = 99;
+        String confirm = "";
         while (clientMenu != 0) {
 
             System.out.println(
-                    "Select the option:\n1 - List my books\n2 - List available books\n3 - Check Out a book\n0 - Return to main menu");
-            clientMenu = readMenuOption();
+                    "\nSelect the option:\n1 - List my books\n2 - List available books\n3 - Check Out a book\n4 - Return a book\n0 - Return to main menu");
+            clientMenu = readIntegerOption();
             switch (clientMenu) {
                 case 1:
-                    System.out.println("Listar livros do cliente");
+                    System.out
+                            .println("This is your books: " + clientBooks == null ? "You no have books." : clientBooks);
                     break;
                 case 2:
-                    System.out.println("Listar todos os livros do disponiveis e apresentar filtros(Genero e Autor)");
+                    System.out.println("This is all available books: " + Library.getBooks());
                     break;
                 case 3:
-                    System.out.println("Associar o cliente a um livro e bloquear o livro para outros clientes");
+                    System.out.println(String.format("This is your name?(Y or N)\n%s", client.getName()));
+                    confirm = read.nextLine();
+                    if (confirm == "Y") {
+                        System.out.println("This is all available books: " + Library.getBooks());
+                        System.out.println("\nPlease insert the id of the book you want: ");
+                        Integer bookId = readIntegerOption();
+                        Book book = Library.getBooks().stream().filter(b -> b.getId() == bookId).toList().getFirst();
+                        if (!(book == null)) {
+                            Library.addLoan(book, client);
+                            System.out.println("You book has been loaned.");
+                        } else {
+                            System.out.println("An invalid book are selected, please insert a valid id.");
+                        }
+                    } else {
+                        System.out.println("The actual logged client is not you, please restart the options.");
+                    }
+                    break;
+                case 4:
+                    System.out.println(String.format("This is your name?(Y or N)\n%s", client.getName()));
+                    confirm = read.nextLine();
+                    if (confirm == "Y") {
+                        System.out.println("This is your books: " + clientBooks);
+                        System.out.println("\nPlease insert the id of the book you want refund: ");
+                        Integer bookId = readIntegerOption();
+                        Book book = clientBooks.stream().filter(b -> b.getId() == bookId).toList().getFirst();
+                        if (!(book == null)) {
+                            Library.addLoan(book, client);
+                            System.out.println("You book has been refunded.");
+                        } else {
+                            System.out.println("An invalid option are selected, please insert a valid id.");
+                        }
+                    } else {
+                        System.out.println("The actual logged client is not you, please restart the options.");
+                    }
                     break;
                 case 0:
                     System.out.println("The program will return to main menu.");
@@ -66,17 +108,33 @@ public class App {
         while (admMenu != 0) {
 
             System.out.println(
-                    "Select the option:\n1 - Add a book\n2 - Add a Client\n3 - List check outs\n0 - Return to main menu");
-            admMenu = readMenuOption();
+                    "\nSelect the option:\n1 - Add a book\n2 - Add a Client\n3 - List check outs\n0 - Return to main menu");
+            admMenu = readIntegerOption();
             switch (admMenu) {
                 case 1:
-                    System.out.println("Adicionar Livro");
+                    System.out.println("Insert the Author name:");
+                    String authorName = read.nextLine();
+                    Author author = new Author(authorName);
+                    System.out.println("Insert the book title:");
+                    String bookTitle = read.nextLine();
+                    Library.addAuthors(author);
+                    Library.addBook(new Book(bookTitle, author));
                     break;
                 case 2:
-                    System.out.println("Adicionar Cliente");
+                    System.out.println("Insert the client name: ");
+                    String clientName = read.nextLine();
+                    Library.addClient(new Client(clientName));
                     break;
                 case 3:
-                    System.out.println("Listar Emprestimos por livro ou por cliente");
+                    System.out.println("This is all Library's books: " + Library.getBooks());
+                    System.out.println("\nInsert the book id you want to check: ");
+                    Integer bookId = readIntegerOption();
+                    Book book = Library.getBooks().stream().filter(b -> b.getId() == bookId).toList().getFirst();
+                    if (!(book == null)) {
+                        System.out.println(Library.getBookLoan(book));
+                        break;
+                    }
+                    System.out.println("The inserted book is invalid.");
                     break;
                 case 0:
                     System.out.println("The program will return to main menu.");
@@ -88,7 +146,7 @@ public class App {
         }
     }
 
-    private static Integer readMenuOption() {
+    private static Integer readIntegerOption() {
         try {
             Integer menu = read.nextInt();
             return menu;
@@ -96,5 +154,18 @@ public class App {
             System.out.println("The selected option is invalid, please dont do that.");
             return 0;
         }
+    }
+
+    private static Boolean validateClientId(Integer clientId) {
+        Client client = Library.getClients()
+                .stream()
+                .filter(c -> c.getId() == clientId)
+                .toList()
+                .getFirst();
+
+        if (client == null) {
+            return false;
+        }
+        return true;
     }
 }
