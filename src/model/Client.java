@@ -12,7 +12,7 @@ public class Client {
     this.id = (int) (Math.random() * 999) + 1;
     this.name = name;
     this.birth = LocalDate.of((int) (Math.random() * 50) + 1950, (int) (Math.random() * 11) + 1,
-        (int) (Math.random() * 29) + 1);
+        (int) (Math.random() * 27) + 1);
     this.email = String.format("%s@email.com", this.name);
   }
 

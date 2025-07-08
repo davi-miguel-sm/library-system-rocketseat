@@ -39,12 +39,13 @@ public class App {
 
     public static void clientMenu(Integer clientId) {
         Client client = Library.getClients()
-                .stream().filter(c -> c.getId() == clientId)
-                .toList().getFirst();
-        var clientBooks = Library.getClientLoans(client);
+                .stream().filter(c -> c.getId().equals(clientId))
+                .findFirst()
+                .orElse(null);
         Integer clientMenu = 99;
         String confirm = "";
         while (clientMenu != 0) {
+            var clientBooks = Library.getClientLoans(client);
 
             System.out.println(
                     "\nSelect the option:\n1 - List my books\n2 - List available books\n3 - Check Out a book\n4 - Return a book\n0 - Return to main menu");
@@ -52,25 +53,23 @@ public class App {
             switch (clientMenu) {
                 case 1:
                     System.out
-                            .println("This is your books: " + clientBooks == null ? "You no have books." : clientBooks);
+                            .println(clientBooks == null ? "You have no books." : "Your books: " + clientBooks);
                     break;
                 case 2:
-                    System.out.println("This is all available books: " + Library.getBooks());
+                    System.out.println("This is all available books: ");
+                    Library.getAvailableBooks()
+                            .forEach(bok -> System.out
+                                    .println(bok.getTitle() + " " + bok.getAuthor().getName() + " " + bok.getId()));
                     break;
                 case 3:
                     System.out.println(String.format("This is your name?(Y or N)\n%s", client.getName()));
                     confirm = read.nextLine();
-                    if (confirm == "Y") {
-                        System.out.println("This is all available books: " + Library.getBooks());
+                    if ("Y".equalsIgnoreCase(confirm)) {
+                        System.out.println("This is all available books: " + Library.getAvailableBooks());
                         System.out.println("\nPlease insert the id of the book you want: ");
                         Integer bookId = readIntegerOption();
-                        Book book = Library.getBooks().stream().filter(b -> b.getId() == bookId).toList().getFirst();
-                        if (!(book == null)) {
-                            Library.addLoan(book, client);
-                            System.out.println("You book has been loaned.");
-                        } else {
-                            System.out.println("An invalid book are selected, please insert a valid id.");
-                        }
+                        Book book = Library.getBookById(bookId);
+                        Library.addLoan(book, client);
                     } else {
                         System.out.println("The actual logged client is not you, please restart the options.");
                     }
@@ -78,16 +77,22 @@ public class App {
                 case 4:
                     System.out.println(String.format("This is your name?(Y or N)\n%s", client.getName()));
                     confirm = read.nextLine();
-                    if (confirm == "Y") {
+                    if ("Y".equalsIgnoreCase(confirm)) {
                         System.out.println("This is your books: " + clientBooks);
+                        if (clientBooks == null) {
+                            System.out.println("You have no books.");
+                            break;
+                        }
                         System.out.println("\nPlease insert the id of the book you want refund: ");
                         Integer bookId = readIntegerOption();
-                        Book book = clientBooks.stream().filter(b -> b.getId() == bookId).toList().getFirst();
-                        if (!(book == null)) {
-                            Library.addLoan(book, client);
-                            System.out.println("You book has been refunded.");
-                        } else {
+                        Book book = clientBooks.stream().filter(b -> b.getId().equals(bookId))
+                                .findFirst()
+                                .orElse(null);
+                        if (book == null) {
                             System.out.println("An invalid option are selected, please insert a valid id.");
+                        } else {
+                            Library.finishLoan(book, client);
+                            System.out.println("You book has been refunded.");
                         }
                     } else {
                         System.out.println("The actual logged client is not you, please restart the options.");
@@ -108,7 +113,7 @@ public class App {
         while (admMenu != 0) {
 
             System.out.println(
-                    "\nSelect the option:\n1 - Add a book\n2 - Add a Client\n3 - List check outs\n0 - Return to main menu");
+                    "\nSelect the option:\n1 - Add a book\n2 - Add a Client\n3 - List check outs\n4 - List Clients\n5 - List Books\n0 - Return to main menu");
             admMenu = readIntegerOption();
             switch (admMenu) {
                 case 1:
@@ -129,12 +134,20 @@ public class App {
                     System.out.println("This is all Library's books: " + Library.getBooks());
                     System.out.println("\nInsert the book id you want to check: ");
                     Integer bookId = readIntegerOption();
-                    Book book = Library.getBooks().stream().filter(b -> b.getId() == bookId).toList().getFirst();
-                    if (!(book == null)) {
-                        System.out.println(Library.getBookLoan(book));
+                    Book book = Library.getBookById(bookId);
+                    if (book == null) {
+                        System.out.println("The inserted book is invalid.");
                         break;
                     }
-                    System.out.println("The inserted book is invalid.");
+                    System.out.println(Library.getBookLoan(book));
+                    break;
+                case 4:
+                    System.out.println("This is our clients: ");
+                    Library.getClients().forEach(cli -> System.out.println(cli.getName() + " " + cli.getId()));
+                    break;
+                case 5:
+                    System.out.println("This is our books: ");
+                    Library.getBooks().forEach(bok -> System.out.println(bok.getTitle() + " " + bok.getId()));
                     break;
                 case 0:
                     System.out.println("The program will return to main menu.");
@@ -149,20 +162,18 @@ public class App {
     private static Integer readIntegerOption() {
         try {
             Integer menu = read.nextInt();
+            read.nextLine();
             return menu;
         } catch (Exception e) {
             System.out.println("The selected option is invalid, please dont do that.");
+            read.nextLine();
             return 0;
         }
     }
 
-    private static Boolean validateClientId(Integer clientId) {
-        Client client = Library.getClients()
-                .stream()
-                .filter(c -> c.getId() == clientId)
-                .toList()
-                .getFirst();
-
+    private static boolean validateClientId(Integer clientId) {
+        Client client = Library.getClientById(clientId);
+        System.out.println("Validando " + (client != null ? client.getId() : "É nulo"));
         if (client == null) {
             return false;
         }

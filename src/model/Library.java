@@ -3,6 +3,7 @@ package model;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,12 +33,24 @@ public class Library {
     return Collections.unmodifiableSet(books);
   }
 
+  public static List<Book> getAvailableBooks() {
+    return books.stream().filter(bok -> bok.getAvailable()).toList();
+  }
+
+  public static Book getBookById(Integer id) {
+    return books.stream().filter(bok -> bok.getId().equals(id)).findFirst().orElse(null);
+  }
+
   public static Set<Author> getAuthors() {
     return Collections.unmodifiableSet(authors);
   }
 
   public static Set<Client> getClients() {
     return Collections.unmodifiableSet(clients);
+  }
+
+  public static Client getClientById(Integer id) {
+    return clients.stream().filter(cli -> cli.getId().equals(id)).findFirst().orElse(null);
   }
 
   public static Boolean addClient(Client client) {
@@ -53,10 +66,13 @@ public class Library {
   }
 
   public static void addLoan(Book book, Client client) {
-    if (book.getAvailable()) {
+    if (book == null) {
+      System.out.println("An invalid book are selected, please insert a valid id.");
+    } else if (book.getAvailable()) {
       book.setAvailable(false);
       bookLoans.put(book, client);
       clientLoans.computeIfAbsent(client, key -> new HashSet<>()).add(book);
+      System.out.println("You book has been loaned.");
     } else {
       System.out.println("The book is not available.");
     }
